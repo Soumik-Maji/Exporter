@@ -1,3 +1,5 @@
+import { download } from "./download.js";
+
 const constructorKey = Symbol("Exporter");
 
 export class Exporter {
@@ -5,10 +7,15 @@ export class Exporter {
     #data;      // stores the flat json data
     #columns;   // stores the column order
     #result;    // stores the intermediate string
+    #mimeType;  // stores the mime type of file for downloading
 
     constructor(passedKey) {
         if (passedKey !== constructorKey)
             throw new Error("Cannot create instance of Exporter using 'new', Call it's static methods ___ instead.");
+    }
+
+    get result() {
+        return this.#result;
     }
 
     static #validateAndSetInput(jsonData, columns) {
@@ -51,6 +58,7 @@ columns: ${columns.join(", ")}`);
         obj.#data = jsonData || [];
         obj.#columns = columns;
         obj.#result = "";
+        obj.#mimeType = "text/plain";
         return obj;
     }
 
@@ -59,18 +67,32 @@ columns: ${columns.join(", ")}`);
         return this;
     }
 
-    download(fileName, mimeType = "text/plain") {
-        if (!fileName)
-            throw new Error("file name is required");
+    download(fileName, mimeType) {
+        if (!mimeType)
+            mimeType = this.#mimeType;
 
-        const blob = new Blob([this.#result], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
+        download(this.#result, fileName, mimeType);
         return this;
+    }
+
+    static toJSON(jsonData, columns) {
+        const obj = Exporter.#validateAndSetInput(jsonData, columns);
+
+        const filtered = obj.#data.map(row => {
+            const newRow = {};
+            obj.#columns.forEach(col => newRow[col] = row[col]);
+            return newRow;
+        });
+
+        obj.#result = JSON.stringify(filtered, null, 2);
+        obj.#mimeType = "application/json";
+        return obj;
+    }
+
+    static toXLS(jsonData, columns) {
+        const obj = Exporter.toHTML(jsonData, columns);
+        obj.#mimeType = 'application/vnd.ms-excel';
+        return obj;
     }
 
     static toCSV(jsonData, columns) {
@@ -104,6 +126,7 @@ columns: ${columns.join(", ")}`);
         csvStr = csvStr.substring(0, csvStr.length - 1);
 
         obj.#result = csvStr;
+        obj.#mimeType = "text/csv";
         return obj;
     }
 
@@ -138,6 +161,7 @@ columns: ${columns.join(", ")}`);
         htmlStr += "</table>";
 
         obj.#result = htmlStr;
+        obj.#mimeType = "text/html";
         return obj;
     }
 
@@ -173,6 +197,7 @@ columns: ${columns.join(", ")}`);
         xmlStr += "</records>";
 
         obj.#result = xmlStr;
+        obj.#mimeType = "text/xml";
         return obj;
     }
 }

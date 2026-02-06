@@ -33,19 +33,29 @@ export async function main() {
     ];
 
     console.log("CSV");
-    Exporter.toCSV(data)
+    Exporter.toCSV(data, ["name", "city", "age"])
         .show()
-    // .download("test-download.csv");
+    // .download("test.csv");
 
     console.log("\n\n");
     console.log("HTML");
-    Exporter.toHTML(data)
+    Exporter.toHTML(data, ["name", "city", "age"])
         .show()
-    // .download("test-download.html");
+    // .download("test.html");
 
-    console.log("\n\n");
-    console.log("XML");
-    Exporter.toXML(data)
+    Exporter.toXLS(data)
         .show()
-    // .download("test-download.xml");
+    // .download('table.xls', 'application/vnd.ms-excel');
+
+    // console.log("\n\n");
+    console.log("XML");
+    Exporter.toXML(data, ["name", "city", "age"])
+        .show()
+    // .download("test.xml");
+
+    // console.log("\n\n");
+    console.log("JSON");
+    Exporter.toJSON(data, ["name", "city", "age"])
+        .show()
+    // .download("test.json");
 }
