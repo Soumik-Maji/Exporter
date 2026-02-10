@@ -2,5 +2,5 @@ implement json to -
 [DONE] csv
 [DONE] html
 [DONE] xml
+[DONE] xlsx (too hard, going for json->html->xls)
 [LEFT] yaml
-[LEFT] xlsx (too hard, going for json->html->xls)

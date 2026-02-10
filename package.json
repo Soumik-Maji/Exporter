@@ -1,0 +1,23 @@
+{
+    "name": "exporter",
+    "version": "1.0.0",
+    "description": "Export flat JSON to CSV, HTML, JSON, XML, XLS files",
+    "homepage": "https://github.com/Soumik-Maji/Exporter#readme",
+    "bugs": {
+        "url": "https://github.com/Soumik-Maji/Exporter/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Soumik-Maji/Exporter.git"
+    },
+    "license": "GPL-3.0-or-later",
+    "author": "Soumik Maji",
+    "type": "module",
+    "main": "index.js",
+    "directories": {
+        "test": "tests"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    }
+}
