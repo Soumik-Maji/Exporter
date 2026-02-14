@@ -13,7 +13,7 @@ export async function main() {
             salary: null
         },
         {
-            age: 42,
+            age: new Date(),
             name: 'Tony "The Tiger" Stark',
             city: "New York",
             salary: 150000
@@ -25,35 +25,67 @@ export async function main() {
             salary: 120000
         },
         {
-            name: "Bob<script>alert('xss')</script>",
+            name: "Bob<span style='background-color:red'>alert('xss')</span>",
             age: 30,
             city: "Seattle\nWashington",
             salary: 95000
         }
     ];
 
+    // const data = [];
+
+    csvtest(data);
+    jsontest(data);
+    xmltest(data);
+    xlstest(data);
+    htmlescapedtest(data);
+    htmlnotescapedtest(data);
+}
+
+function htmlescapedtest(data) {
+    console.log("\n\n");
+    console.log("HTML -- escaped --");
+    const x = Exporter.toHTML(data, ["name", "city", "age"]);
+    x.show();
+    document.body.innerHTML += x.result;
+    // x.download("test-escaped.html");
+}
+
+function htmlnotescapedtest(data) {
+    console.log("\n\n");
+    console.log("HTML -- not escaped --");
+    const x = Exporter.toHTML(data, ["name", "city", "age"], false);
+    x.show();
+    document.body.innerHTML += x.result;
+    // x.download("test-notescaped.html");
+}
+
+function csvtest(data) {
+    console.log("\n\n");
     console.log("CSV");
     Exporter.toCSV(data, ["name", "city", "age"])
         .show()
     // .download("test.csv");
+}
 
+function xlstest(data) {
     console.log("\n\n");
-    console.log("HTML");
-    Exporter.toHTML(data, ["name", "city", "age"])
-        .show()
-    // .download("test.html");
-
-    Exporter.toXLS(data)
+    console.log("XLS");
+    Exporter.toXLS(data, ["name", "city", "age"])
         .show()
     // .download('table.xls', 'application/vnd.ms-excel');
+}
 
-    // console.log("\n\n");
+function xmltest(data) {
+    console.log("\n\n");
     console.log("XML");
     Exporter.toXML(data, ["name", "city", "age"])
         .show()
     // .download("test.xml");
+}
 
-    // console.log("\n\n");
+function jsontest(data) {
+    console.log("\n\n");
     console.log("JSON");
     Exporter.toJSON(data, ["name", "city", "age"])
         .show()
