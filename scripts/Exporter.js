@@ -11,7 +11,7 @@ export class Exporter {
 
     constructor(passedKey) {
         if (passedKey !== constructorKey)
-            throw new Error("Cannot create instance of Exporter using 'new', Call it's static methods ___ instead.");
+            throw new Error("Cannot create instance of Exporter using 'new', Call its static methods toCSV, toJSON, toHTML, toXLS, or toXML instead.");
     }
 
     get result() {
@@ -45,13 +45,29 @@ export class Exporter {
         if (columns.length > 0 && new Set(columns).size !== columns.length)
             throw new Error("duplicate column names found");
 
-        // Validate all columns exist in at least one row (warning only)
+        // Validate all columns exist in at least one row
         if (jsonData && jsonData.length > 0 && columns.length > 0) {
             const dataCols = Object.keys(jsonData[0]);
             if (!(columns.every(col => dataCols.includes(col))))
                 throw new Error(`provided columns do not match the data columns present
 data keys: ${dataCols.join(", ")}
 columns: ${columns.join(", ")}`);
+        }
+
+        // allows only specific data types to be exported
+        if (jsonData && jsonData.length > 0 && columns.length > 0) {
+            columns.forEach(col => {
+                const val = jsonData[0][col],
+                    type = typeof val;
+
+                const isAllowed = val instanceof Date || val === null ||
+                    type === "string" || type === "number" ||
+                    type === "boolean" || type === "undefined" ||
+                    type === "bigint";
+
+                if (!isAllowed)
+                    throw new Error("Object values must be one of: Date, null, string, number, boolean, undefined, bigint.");
+            });
         }
 
         const obj = new Exporter(constructorKey);
@@ -108,30 +124,30 @@ columns: ${columns.join(", ")}`);
         const obj = Exporter.#validateAndSetInput(jsonData, columns);
 
         const colLen = obj.#columns.length;
-        let csvStr = "";
+        const csvArr = [];
 
-        let rowStr = "";
+        let rowArr = [];
         for (let i = 0; i < colLen; i++)
-            rowStr += escapeValue(obj.#columns[i]) + ",";
+            rowArr.push(escapeValue(obj.#columns[i]));
 
-        csvStr += rowStr.substring(0, rowStr.length - 1) + "\n";
+        csvArr.push(rowArr.join(","));
 
         for (let i = 0; i < obj.#data.length; i++) {
-            rowStr = "";
+            rowArr = [];
             for (let j = 0; j < colLen; j++) {
-                rowStr += escapeValue(obj.#data[i][obj.#columns[j]]) + ",";
+                rowArr.push(escapeValue(obj.#data[i][obj.#columns[j]]));
             }
-            csvStr += rowStr.substring(0, rowStr.length - 1) + "\n";
+            csvArr.push(rowArr.join(","));
         }
-        csvStr = csvStr.substring(0, csvStr.length - 1);
 
-        obj.#result = csvStr;
+        obj.#result = csvArr.join("\n");
         obj.#mimeType = "text/csv";
         return obj;
     }
 
-    static toHTML(jsonData, columns) {
+    static toHTML(jsonData, columns, doEscapeHTML = true) {
         const escapeHTML = (val) => {
+            if (!doEscapeHTML) return val;
             if (val === undefined || val === null) return '';
             return String(val)
                 .replace(/&/g, '&amp;')
@@ -143,24 +159,24 @@ columns: ${columns.join(", ")}`);
         const obj = Exporter.#validateAndSetInput(jsonData, columns);
 
         const colLen = obj.#columns.length;
-        let htmlStr = "<table border='1'>";
+        const htmlArr = ["<table border='1'>"];
 
-        let rowStr = "<tr>";
+        let rowArr = [];
         for (let i = 0; i < colLen; i++)
-            rowStr += `<th>${escapeHTML(obj.#columns[i])}</th>`;
+            rowArr.push(`<th>${escapeHTML(obj.#columns[i])}</th>`);
 
-        htmlStr += rowStr + "</tr>";
+        htmlArr.push(`<tr>${rowArr.join("")}</tr>`);
 
         for (let i = 0; i < obj.#data.length; i++) {
-            rowStr = "<tr>";
+            rowArr = [];
             for (let j = 0; j < colLen; j++) {
-                rowStr += `<td>${escapeHTML(obj.#data[i][obj.#columns[j]])}</td>`;
+                rowArr.push(`<td>${escapeHTML(obj.#data[i][obj.#columns[j]])}</td>`);
             }
-            htmlStr += rowStr + "</tr>";
+            htmlArr.push(`<tr>${rowArr.join("")}</tr>`);
         }
-        htmlStr += "</table>";
+        htmlArr.push("</table>");
 
-        obj.#result = htmlStr;
+        obj.#result = htmlArr.join("");
         obj.#mimeType = "text/html";
         return obj;
     }
@@ -183,20 +199,22 @@ columns: ${columns.join(", ")}`);
         const obj = Exporter.#validateAndSetInput(jsonData, columns);
 
         const colLen = obj.#columns.length;
-        let xmlStr = `<?xml version="1.0" encoding="UTF-8"?><records>`;
+        const xmlArr = [`<?xml version="1.0" encoding="UTF-8"?><records>`];
 
-        let rowStr = "";
         for (let i = 0; i < obj.#data.length; i++) {
-            rowStr = "<row>";
+            const rowStr = [];
             for (let j = 0; j < colLen; j++) {
                 const sanitizedTag = sanitizeTag(obj.#columns[j]);
-                rowStr += `<${sanitizedTag}>${escapeXML(obj.#data[i][obj.#columns[j]])}</${sanitizedTag}>`;
-            }
-            xmlStr += rowStr + "</row>";
-        }
-        xmlStr += "</records>";
+                if (!sanitizedTag)
+                    throw new Error(`column "${obj.#columns[j]}" produces invalid XML tag name`);
 
-        obj.#result = xmlStr;
+                rowStr.push(`<${sanitizedTag}>${escapeXML(obj.#data[i][obj.#columns[j]])}</${sanitizedTag}>`);
+            }
+            xmlArr.push(`<row>${rowStr.join("")}</row>`);
+        }
+        xmlArr.push("</records>");
+
+        obj.#result = xmlArr.join("");
         obj.#mimeType = "text/xml";
         return obj;
     }
