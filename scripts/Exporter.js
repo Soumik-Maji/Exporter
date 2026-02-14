@@ -1,7 +1,42 @@
 import { download } from "./download.js";
 
 const constructorKey = Symbol("Exporter");
-
+/**
+ * Exporter class for converting JSON data to various file formats.
+ * Cannot be instantiated directly - use static methods instead.
+ *
+ * Supported data types for object values:
+ * - string
+ * - number
+ * - boolean
+ * - bigint
+ * - Date
+ * - null
+ * - undefined
+ *
+ * Note: Validation checks the first row only. Ensure all rows have consistent structure
+ * and data types to avoid runtime errors during export.
+ *
+ *
+ * @class
+ * @example
+ * const data = [
+ *   { name: "Alice", age: 30 },
+ *   { name: "Bob", age: 25 }
+ * ];
+ *
+ * // Export as CSV
+ * Exporter.toCSV(data).download("users.csv");
+ *
+ * // Export with custom columns
+ * Exporter.toJSON(data, ["name"]).show();
+ *
+ * // Chain methods
+ * Exporter.toHTML(data).show().download("table.html");
+ *
+ * // Get the export string using result getter
+ * Exporter.toHTML(data).result;
+ */
 export class Exporter {
 
     #data;      // stores the flat json data
@@ -14,6 +49,11 @@ export class Exporter {
             throw new Error("Cannot create instance of Exporter using 'new', Call its static methods toCSV, toJSON, toHTML, toXLS, or toXML instead.");
     }
 
+    /**
+     * Gets the exported result as a string.
+     * @return {string}
+     * @readonly
+     */
     get result() {
         return this.#result;
     }
@@ -78,11 +118,28 @@ columns: ${columns.join(", ")}`);
         return obj;
     }
 
+    /**
+     * Logs the exported result to the console.
+     * @returns {Exporter} Returns this for method chaining
+     *
+     * @example
+     * Exporter.toCSV(data).show();
+     */
     show() {
         console.log(this.#result);
         return this;
     }
 
+    /**
+     * Downloads the exported result as a file.
+     * @param {string} fileName - Name of the file to download (including extension)
+     * @param {string} [mimeType] - MIME type override (defaults to format-specific type)
+     * @returns {Exporter} Returns this for method chaining
+     *
+     * @example
+     * Exporter.toCSV(data).download("report.csv");
+     * Exporter.toHTML(data).download("table.html", "text/html");
+     */
     download(fileName, mimeType) {
         if (!mimeType)
             mimeType = this.#mimeType;
@@ -91,6 +148,17 @@ columns: ${columns.join(", ")}`);
         return this;
     }
 
+    /**
+     * Exports data as JSON with optional column filtering and ordering.
+     * @param {Object[]} jsonData - Array of plain objects to export
+     * @param {string[]} [columns] - Column names to include (auto-detected from first row if omitted)
+     * @returns {Exporter} Exporter instance with JSON result
+     * @throws {Error} If data is invalid or contains unsupported types
+     *
+     * @example
+     * Exporter.toJSON(data).download("data.json");
+     * Exporter.toJSON(data, ["name", "age"]).show();
+     */
     static toJSON(jsonData, columns) {
         const obj = Exporter.#validateAndSetInput(jsonData, columns);
 
@@ -105,12 +173,37 @@ columns: ${columns.join(", ")}`);
         return obj;
     }
 
+    /**
+     * Exports data as HTML table with Excel MIME type for opening in spreadsheet applications.
+     * Note: This generates an HTML table, not a native .xls/.xlsx file. Modern Excel may show
+     * security warnings. For proper Excel files, use a dedicated library. Users can copy/paste
+     * into Excel and save as .xlsx for full compatibility.
+     * @param {Object[]} jsonData - Array of plain objects to export
+     * @param {string[]} [columns] - Column names to include (auto-detected from first row if omitted)
+     * @returns {Exporter} Exporter instance with HTML table result and Excel MIME type
+     * @throws {Error} If data is invalid or contains unsupported types
+     *
+     * @example
+     * Exporter.toXLS(data).download("report.xls");
+     */
     static toXLS(jsonData, columns) {
         const obj = Exporter.toHTML(jsonData, columns);
         obj.#mimeType = 'application/vnd.ms-excel';
         return obj;
     }
 
+    /**
+     * Exports data as CSV with proper escaping of special characters.
+     * Handles quotes, commas, and newlines within values.
+     * @param {Object[]} jsonData - Array of plain objects to export
+     * @param {string[]} [columns] - Column names to include (auto-detected from first row if omitted)
+     * @returns {Exporter} Exporter instance with CSV result
+     * @throws {Error} If data is invalid or contains unsupported types
+     *
+     * @example
+     * Exporter.toCSV(data).download("report.csv");
+     * Exporter.toCSV(data, ["id", "name", "email"]).show();
+     */
     static toCSV(jsonData, columns) {
         const escapeValue = val => {
             if (val === undefined || val === null)
@@ -145,6 +238,18 @@ columns: ${columns.join(", ")}`);
         return obj;
     }
 
+    /**
+     * Exports data as an HTML table with optional HTML escaping.
+     * @param {Object[]} jsonData - Array of plain objects to export
+     * @param {string[]} [columns] - Column names to include (auto-detected from first row if omitted)
+     * @param {boolean} [doEscapeHTML=true] - Whether to escape HTML entities in values
+     * @returns {Exporter} Exporter instance with HTML result
+     * @throws {Error} If data is invalid or contains unsupported types
+     *
+     * @example
+     * Exporter.toHTML(data).download("table.html");
+     * Exporter.toHTML(data, null, false).show(); // No HTML escaping
+     */
     static toHTML(jsonData, columns, doEscapeHTML = true) {
         const escapeHTML = (val) => {
             if (!doEscapeHTML) return val;
@@ -181,6 +286,18 @@ columns: ${columns.join(", ")}`);
         return obj;
     }
 
+    /**
+     * Exports data as XML with sanitized tag names.
+     * Column names are converted to valid XML tags (spaces to underscores, invalid chars removed).
+     * @param {Object[]} jsonData - Array of plain objects to export
+     * @param {string[]} [columns] - Column names to include (auto-detected from first row if omitted)
+     * @returns {Exporter} Exporter instance with XML result
+     * @throws {Error} If data is invalid, contains unsupported types, or column names produce invalid XML tags
+     *
+     * @example
+     * Exporter.toXML(data).download("data.xml");
+     * Exporter.toXML(data, ["id", "name"]).show();
+     */
     static toXML(jsonData, columns) {
         const escapeXML = (val) => {
             if (val === undefined || val === null) return '';

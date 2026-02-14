@@ -4,3 +4,7 @@ implement json to -
 [DONE] xml
 [DONE] xlsx (too hard, going for json->html->xls)
 [LEFT] yaml
+
+Planning on doing the validation in 2 steps.
+step 1 - validate the data along with columns as a whole. like data is array check, columns check, etc.
+step 2 - a validation function which can be called for every row. checks for row validity, data type, column presence, etc.
