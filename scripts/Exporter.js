@@ -252,8 +252,8 @@ columns: ${columns.join(", ")}`);
      */
     static toHTML(jsonData, columns, doEscapeHTML = true) {
         const escapeHTML = (val) => {
-            if (!doEscapeHTML) return val;
             if (val === undefined || val === null) return '';
+            if (!doEscapeHTML) return val;
             return String(val)
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
