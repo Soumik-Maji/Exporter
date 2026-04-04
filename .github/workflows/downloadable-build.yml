@@ -53,7 +53,7 @@ jobs:
               with:
                 tag_name: release-${{ github.run_number }}
                 name: Release
-                files: ${{ github.event.repository.name }}.tar.gz
+                files: /tmp/${{ github.event.repository.name }}.tar.gz
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
