@@ -37,7 +37,10 @@ jobs:
 
             - name: Create archive
               run: |
-                tar -czvf ./${{ github.event.repository.name }}.tar.gz -C .. release
+                rm -rf ../${{ github.event.repository.name }}
+                mv ../release ../${{ github.event.repository.name }}
+                tar -czvf /tmp/${{ github.event.repository.name }}.tar.gz -C .. ${{ github.event.repository.name }}
+                mv /tmp/${{ github.event.repository.name }}.tar.gz ../${{ github.event.repository.name }}.tar.gz
 
             - name: Upload artifact
               uses: actions/upload-artifact@v6
