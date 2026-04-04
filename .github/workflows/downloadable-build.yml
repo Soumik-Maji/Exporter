@@ -40,13 +40,12 @@ jobs:
                 rm -rf ../${{ github.event.repository.name }}
                 mv ../release ../${{ github.event.repository.name }}
                 tar -czvf /tmp/${{ github.event.repository.name }}.tar.gz -C .. ${{ github.event.repository.name }}
-                mv /tmp/${{ github.event.repository.name }}.tar.gz ../${{ github.event.repository.name }}.tar.gz
 
             - name: Upload artifact
               uses: actions/upload-artifact@v6
               with:
                 name: production-build
-                path: ${{ github.event.repository.name }}.tar.gz
+                path: /tmp/${{ github.event.repository.name }}.tar.gz
 
             - name: Create Release
               if: github.event.pull_request.merged == true
